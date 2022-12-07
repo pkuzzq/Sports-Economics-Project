@@ -8,6 +8,18 @@ options(scipen=999)
 
 # General ----------------------------------------------------------------------
 
+# `?` <- function(x, y) {
+#   xs <- as.list(substitute(x))
+#   if (xs[[1]] == as.name("<-")) x <- eval(xs[[3]])
+#   r <- eval(sapply(strsplit(deparse(substitute(y)), ":"), function(e) parse(text = e))[[2 - as.logical(x)]])
+#   if (xs[[1]] == as.name("<-")) {
+#     xs[[3]] <- r
+#     eval.parent(as.call(xs))
+#   } else {
+#     r
+#   }
+# }       
+
 # assign to environment and update namespace
 assign_to_namespace <- function(.name, .obj, .env) {
   envName = as.character(match.call()$.env)
@@ -73,19 +85,24 @@ day0 <- function(.date) {
 }
 # fill numeric vector NA values with smooth averages
 fill_average <- function(.vec) {
-  filledVec <- .vec
-  minNumId <- which(!is.na(filledVec)) %>% min()
-  maxNumId <- which(!is.na(filledVec)) %>% max()
-  for (i in 1:length(filledVec)) {
-    if (is.na(filledVec[i]) & i > minNumId & i < maxNumId) {
-      lagDist <- length(head(filledVec, i-1)) - max(which(!is.na(head(filledVec, i-1)))) + 1
-      lagValue <- head(filledVec, i-1)[max(which(!is.na(head(filledVec, i-1))))]
-      leadDist <- min(which(!is.na(tail(filledVec, -i))))
-      leadValue <- tail(filledVec, -i)[leadDist]
-      filledVec[i] <- seq(lagValue, leadValue, length = (lagDist + leadDist + 1))[lagDist + 1]
-    }
+  if (all(is.na(.vec))) { # county 06003, is literally all 0s. so if you get c(NA, NA, ...) just return a vec of 0s.
+    rep(0, length = length(.vec))
   }
-  filledVec
+  else {
+    filledVec <- .vec
+    minNumId <- which(!is.na(filledVec)) %>% min()
+    maxNumId <- which(!is.na(filledVec)) %>% max()
+    for (i in 1:length(filledVec)) {
+      if (is.na(filledVec[i]) & i > minNumId & i < maxNumId) {
+        lagDist <- length(head(filledVec, i-1)) - max(which(!is.na(head(filledVec, i-1)))) + 1
+        lagValue <- head(filledVec, i-1)[max(which(!is.na(head(filledVec, i-1))))]
+        leadDist <- min(which(!is.na(tail(filledVec, -i))))
+        leadValue <- tail(filledVec, -i)[leadDist]
+        filledVec[i] <- seq(lagValue, leadValue, length = (lagDist + leadDist + 1))[lagDist + 1]
+      }
+    }
+    replace(filledVec, is.na(filledVec), 0) # replace any existing NAs on the boundaries with 0.
+  }
 }
 # mass load all csvs in a directory
 mass_load <- function(.src, .pos, .bind = F) {
