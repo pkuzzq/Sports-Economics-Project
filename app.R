@@ -8,6 +8,7 @@ library(tidyverse)
 library(leaflet)
 library(htmltools)
 library(sf)
+library(shinycssloaders)
 
 # load the daata
 dat.map.fips <- readRDS("dat.leaflet.fips.rds")
@@ -21,56 +22,67 @@ pal.map <- colorFactor(c("#c92f24", "#c92f24", "#0998eb"),
 # UI ---------------------------------------------------------------------------
 
 ui <- fluidPage(
-  titlePanel(htmltools::HTML(" <i>Is Covid-19 to Blame?</i> Web App!")),
+  titlePanel(htmltools::HTML("&nbsp<i>Is Covid-19 to Blame?</i> Web App!"), "Is Covid-19 to Blame? Web App!"),
   sidebarLayout(
     sidebarPanel(style = "height: 91vh",
                  htmltools::HTML(
-                 "This web app serves to visualize a subset of the data used 
-                 in the economics working paper <i>Is Covid-19 to Blame?</i> by Giancarlo Arcese (me)
-                 and professor Benjamin Anderson at Colgate University. We are interested in determining whether 
-                 local Covid-19 activity, measured by the weekly total of new cases or new deaths in a city, impacted
-                 professional sports attendance in the NBA and NHL.</br></br>
-                 Select a week from the dropdown below to update the map's data. <b>Hover over</b> a county to display
-                 its Covid-19 statistics, as well as the statistics for the entire city. Counties that are a part
-                 of a city are colored red, while counties directly neighboring a city ar colored blue. <b>Click on</b> any 
-                 county in a city to display statistics about the NBA and NHL games played in the selected week.</br></br>
-                 "),
-      selectInput("week", label = "Select as week:", 
+                 "This web application combines the Covid-19 and game-day data from 
+                 the sports economics working paper \"<i>Is Covid-19 to Blame?</i>\" 
+                 onto a single interactive map. The paper is written by Giancarlo 
+                 Arcese (me) and professor Benjamin Anderson at Colgate University. 
+                 We are investigating whether local Covid-19 activity, measured 
+                 by the weekly total of new cases or new deaths in a city, impacted
+                 attendance to NBA and NHL games during the 2021-22 season.</br></br>
+                 
+                 Select a week from the dropdown below to update the map's data. 
+                 <b>Hover over</b> a county to display its Covid-19 statistics, 
+                 as well as the Covid-19 statistics for the correspnding city. Counties that 
+                 are directly in a city are colored <span style = \"color: #c92f24\">red</span>, 
+                 while counties neighboring a city are colored <span style = \"color: #0998eb\">blue</span>. 
+                 <b>Click on</b> any county in a city to display statistics about 
+                 the NBA and NHL games played there for the selected week.</br></br>"
+                 ),
+      selectInput("week", label = "Select a week:", 
                   choices = dat.map.fips %>% pull(floor_monday) %>% unique()
                   ),
       htmltools::HTML(
-      "This data will be used in a linear regression model to determine whether fans reacted to 
-        local-Covid-19 activity when deciding to attend NBA and NHL games. To avoid endogeneity, we plan
-        to use data from the counties directly neighboring each city as an instrument for the weekly total
-        of cases and deaths in each respective city. Additional variables such as the home team's win probability 
-        and the local time when the game was played are omitted from this web app but will be used in the regression.</br></br>
-        Sports data is provided by ESPN.com and Covid-19 data from <a href='https://github.com/Garcese/sports_econ_project'>TheNewYorkTimes Covid-19 Tracker</a>,
-        and county shape files from the R Tigris package. The source code used to create this project, 
-        as well as the code to collect and clean all the raw data, can be found
-        at this project's <a href='https://github.com/Garcese/sports_econ_project'>Github page</a>.
-        With any questions, please reach out to GTArcese@gmail.com, I will glady answer any questions!
-      "
+      "We employ a linear regression as our primary model. To avoid endogeneity, 
+      we use data from neighboring counties as an instrument for the weekly 
+      total number of cases and deaths in each respective city. Additional variables 
+      such as the home team's win probability and the local time when the game was 
+      played are included in the regression but omitted from this web app. This 
+      working paper won first place at the undergraduate paper competition at the 
+      2022 New York State Economics Association conference at Suny Old Westbury.</br></br>
+      
+      Sports data is provided by ESPN.com, Covid-19 data from <a href='https://github.com/Garcese/sports_econ_project'>TheNewYorkTimes Covid-19 Tracker</a>,
+      and county shape files from the R Tigris package (which comes from the 2020 census). 
+      The source code used to create this project, as well as the R code to collect 
+      and clean all the raw data, can be found at this project's <a href='https://github.com/Garcese/sports_econ_project'>GitHub page</a>.
+      With any questions, please reach out to GTArcese@gmail.com."
         ),
     ),
     mainPanel(
-      leafletOutput("map", height = "65vh"),
+      tags$div(style = "position: relative; left: -16px; height: 65vh; width: 65.75vw; 
+               background-color: #f5f5f5; border-radius: 2px; border: 1px solid #e3e3e3;",
+               leafletOutput("map", height = "65vh", width = "65.75vw") %>% 
+                 withSpinner(type = 3, size = 2, color.background = "#f5f5f5")
+               ),
       conditionalPanel(
         condition = "output.exists != 'yes'",
-        column(style = 
-"height:25vh; width: 100%; margin-top: 10px; overflow-y: scroll; overflow-x: scroll; background-color: #f5f5f5; border-radius: 2px; border: 1px solid #e3e3e3;",
+        column(style = "left: -16px; height: 25vh; width: 65.75vw; margin-top: 10px; 
+               overflow-y: scroll; overflow-x: scroll; background-color: #f5f5f5; border-radius: 
+               2px; border: 1px solid #e3e3e3;",
                width = 6,
                textOutput("exists")
                )
       ),
       conditionalPanel(
         condition = "output.exists == 'yes'",
-        column(style = 
-"height:25vh; width: 100%; margin-top: 10px; scroll; background-color: #f5f5f5; border-radius: 2px; border: 1px solid #e3e3e3;",
+        column(style = "left: -16px; height: 25vh; width: 65.75vw; margin-top: 10px; 
+               scroll; background-color: #f5f5f5; border-radius: 2px; border: 1px solid #e3e3e3;",
                width = 6,
-               # tableOutput("table")
-               # )
-                div(style = 'height: 100%; overflow-y: scroll; overflow-x: scroll;', tableOutput('table'))
-              )
+               div(style = 'height: 100%; overflow-y: scroll; overflow-x: scroll;', tableOutput('table'))
+               )
       )
     )
   )
@@ -142,7 +154,7 @@ server <- function(input, output, session) {
         .[[1]]
     })
   })
-  outputOptions(output, 'exists', suspendWhenHidden = F)
+  outputOptions(output, 'exists', suspendWhenHidden = F) # I forget why I needed this
 }
 
 shinyApp(ui, server)

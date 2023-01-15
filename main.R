@@ -4,28 +4,27 @@
 ############################################################################## #  
 
 # Packages
-library(expp)
+library(expp) # had to make a copy of libgdal.32.dylib and rename is libgdal.31.dylib
 # This messes with view() function, and probably lots of others
 as.data.frame <- base::as.data.frame
-library(fastDummies)
-library(htmltools)
-library(httr)
+library(fastDummies) # turns factor in dummies
+library(htmltools) # for leaflet
+library(httr) # data-scraping
 library(leaflet)
-library(lubridate)
-library(magrittr)
-library(openxlsx)
-library(patchwork)
+library(lubridate) # dates and time
+library(magrittr) # set_colnames
+library(openxlsx) 
+library(patchwork) 
 library(renv)
-library(RCurl)
-library(readxl)
-library(rvest)
-library(scales)
+library(RCurl) # needed for something ...
+library(rvest) # read_html function
+library(scales) # something with graphs/colors maybe
 library(shiny)
-library(spdep)
+library(spdep) # spatial data maybe
 library(stargazer)
 library(tidyselect)
 library(tidyverse)
-library(tigris)
+library(tigris) # something with spatial data I think
 library(totalcensus)
 # Import "personal package"
 source("personal_package.R", local = personal_package <- new.env())
@@ -166,8 +165,8 @@ cbsa_to_time <- function(.cbsa) {
   )
 }
 
-# get Neighboring counties
-dat.neighboring <- counties() %>% # gets county geo-spatial data
+# get neighboring counties
+dat.neighboring <- readRDS("assets/leaflet/2020_fips_shapes.rds") %>% # gets county geo-spatial data
   select(GEOID, geometry) %>% 
   set_colnames(c("fips", "geometry"))
 dat.neighboring <- dat.neighboring %>% # run geo-spatial list into a function that automatically detects adjacencies
@@ -213,7 +212,7 @@ dat.cbsa <- read_csv("assets/cbsa_data/raw.cbsa.csv", col_types = cols(.default 
               rename(fips = cbsa_neighbors) %>% 
               mutate(central_outlying = "Neighboring")
               ) %>% # adds 430 fips, 313 + 430 = 743, all the neighboring fips. Assign them as "neighboring". 
-  filter(fips %notin% c("26021", "26159", "26005", "26139", "26121", "26127")) %>% # erraneously assigned neighbors
+  filter(fips %notin% c("26021", "26159", "26005", "26139", "26121", "26127")) %>% # erroneously assigned neighbors
   relocate(fips_neighbors, .after = central_outlying) %>% 
   left_join(x = select(., -(cbsa_title:cbsa_neighbors)), # for some reason, specifying x and y was necessary
             y = select(., cbsa:cbsa_neighbors) %>% distinct(cbsa, .keep_all = T),
@@ -659,14 +658,14 @@ dat.leaflet <- readRDS("assets/leaflet/2020_fips_shapes.rds") %>% # 500k is best
   filter(temp == 1) %>% 
   select(-temp) %>% # 710 unique fips times 29 weeks
   mutate(fip_label = paste0(
-    "<dt style=font-weight:bold;font-size:12pt;>CBSA-Stats</dt>
+    "<dt style=font-weight:bold;font-size:12pt;>City Stats</dt>
         <li style=margin-left:15px;>CBSA Title: ", cbsa_title, "</li>
         <li style=margin-left:15px;>Weekly New Cases: ", cbsa_w_n_cases, "</li>
         <li style=margin-left:15px;>Weekly New Deaths: ", cbsa_w_n_deaths, "</li>
-    <dt style=font-weight:bold;font-size:12pt;>Neighboring County Stats</dt>
+    <dt style=font-weight:bold;font-size:12pt;>Neighboring Counties Stats</dt>
         <li style=margin-left:15px;>Weekly New Cases: ", neigh_cbsa_w_n_cases, "</li>
         <li style=margin-left:15px;>Weekly New Deaths: ", neigh_cbsa_w_n_deaths, "</li>
-    <dt style=font-weight:bold;font-size:12pt;>County-Stats</dt>
+    <dt style=font-weight:bold;font-size:12pt;>County Stats</dt>
         <li style=margin-left:15px;>County Title: ", county, "</li>
         <li style=margin-left:15px;>Weekly New Cases: ", w_n_cases, "</li>
         <li style=margin-left:15px;>Weekly New Deaths: ", w_n_deaths, "</li>"
@@ -681,42 +680,11 @@ dat.leaflet.cbsa <- dat.leaflet %>%
   select(cbsa, cbsa_geometry) %>% 
   distinct(cbsa_geometry)
 
-saveRDS(dat.leaflet.fips, "app/dat.leaflet.fips.rds")
-saveRDS(dat.leaflet.cbsa, "app/dat.leaflet.cbsa.rds")
+saveRDS(dat.leaflet.fips, "dat.leaflet.fips.rds")
+saveRDS(dat.leaflet.cbsa, "dat.leaflet.cbsa.rds")
 
 
 
-test <- dat.leaflet %>% filter(floor_monday == "2021-11-15")
-
-leaflet() %>% 
-  addProviderTiles(
-    providers$CartoDB.VoyagerNoLabels,
-    options = providerTileOptions(
-      minZoom = 4, 
-      maxZoom = 10
-    )) %>% 
-  addPolygons(
-    data = test %>% filter(central_outlying == "Neighboring"),
-    fillColor = ~pal.leaflet(central_outlying),
-    fillOpacity = 0.5, 
-    color = "#053f63", 
-    weight = 0.5,
-    label = ~lapply(fip_label, htmltools::HTML)
-  ) %>%
-  addPolygons(
-    data = test %>% filter(central_outlying != "Neighboring"),
-    fillColor = ~pal.leaflet(central_outlying),
-    fillOpacity = 0.5, 
-    color = "#80091f", 
-    weight = 0.5,
-    label = ~lapply(fip_label, htmltools::HTML)
-  ) %>% 
-  addPolylines(
-    data = test %>% group_by(cbsa_geometry) %>% filter(row_number() == 1) %>% pull(cbsa_geometry),
-    color = "#000000", 
-    weight = 0.75
-  ) %>% 
-  setMaxBounds(lng1 = -45, lat1 = 8, lng2 = -142, lat2 = 61) # box you can't drag out of
 
 
 
