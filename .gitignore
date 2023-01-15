@@ -1,6 +1,8 @@
 assets
 plots
 renv
+rsconnect
 .RData
 .Rhistory
 .Rprofile
+.DS_Store
