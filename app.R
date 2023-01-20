@@ -2,6 +2,8 @@
 ### Leaflet Map
 ############################################################################## #  
 
+# install.packages("sf", type = "source", configure.args = c("--with-sqlite3-lib=/usr/local/opt/sqlite/lib", "--with-proj-lib=/usr/local/opt/proj/lib"))
+
 # Packages
 library(shiny)
 library(tidyverse)
@@ -24,7 +26,7 @@ pal.map <- colorFactor(c("#c92f24", "#c92f24", "#0998eb"),
 ui <- fluidPage(
   titlePanel(htmltools::HTML("&nbsp<i>Is Covid-19 to Blame?</i> Web App!"), "Is Covid-19 to Blame? Web App!"),
   sidebarLayout(
-    sidebarPanel(style = "height: 91vh",
+    sidebarPanel(style = "height: 91vh; overflow-y: scroll",
                  htmltools::HTML(
                  "This web application combines the Covid-19 and game-day data from 
                  the sports economics working paper \"<i>Is Covid-19 to Blame?</i>\" 
@@ -62,14 +64,15 @@ ui <- fluidPage(
         ),
     ),
     mainPanel(
-      tags$div(style = "position: relative; left: -16px; height: 65vh; width: 65.75vw; 
+      tags$div(style = "position: relative; left: 0px; height: 65vh; 
                background-color: #f5f5f5; border-radius: 2px; border: 1px solid #e3e3e3;",
-               leafletOutput("map", height = "65vh", width = "65.75vw") %>% 
+               id = "myid",
+               leafletOutput("map", height = "65vh", width = "100%") %>% 
                  withSpinner(type = 3, size = 2, color.background = "#f5f5f5")
                ),
       conditionalPanel(
         condition = "output.exists != 'yes'",
-        column(style = "left: -16px; height: 25vh; width: 65.75vw; margin-top: 10px; 
+        column(style = "left: 0px; height: 25vh; width: 100%; margin-top: 10px; 
                overflow-y: scroll; overflow-x: scroll; background-color: #f5f5f5; border-radius: 
                2px; border: 1px solid #e3e3e3;",
                width = 6,
@@ -78,7 +81,7 @@ ui <- fluidPage(
       ),
       conditionalPanel(
         condition = "output.exists == 'yes'",
-        column(style = "left: -16px; height: 25vh; width: 65.75vw; margin-top: 10px; 
+        column(style = "left: 0px; height: 25vh; width: 100%; margin-top: 10px; 
                scroll; background-color: #f5f5f5; border-radius: 2px; border: 1px solid #e3e3e3;",
                width = 6,
                div(style = 'height: 100%; overflow-y: scroll; overflow-x: scroll;', tableOutput('table'))
