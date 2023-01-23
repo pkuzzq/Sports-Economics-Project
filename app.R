@@ -5,12 +5,12 @@
 # install.packages("sf", type = "source", configure.args = c("--with-sqlite3-lib=/usr/local/opt/sqlite/lib", "--with-proj-lib=/usr/local/opt/proj/lib"))
 
 # Packages
-library(shiny)
-library(tidyverse)
-library(leaflet)
 library(htmltools)
+library(leaflet)
 library(sf)
+library(shiny)
 library(shinycssloaders)
+library(tidyverse)
 
 # load the daata
 dat.map.fips <- readRDS("dat.leaflet.fips.rds")

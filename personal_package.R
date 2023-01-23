@@ -215,7 +215,7 @@ summary_stats <- function(.data, ..., yes_median = F) {
               psd = psd(.data[[var]]),
               pvar = pvar(.data[[var]])
             ) %>% 
-            select(2:ncol(.)) %>% 
+            select(where(~is.numeric(.x))) %>% # THIS IS TO DROP GROUPING VARIABLE, ASSUMES IT IS A CHARACTER
             rename_with(~paste(var, .x, sep = "_"), contains(c("mean", "median", "min", "max", "psd", "pvar")))
         )
     }
@@ -250,6 +250,9 @@ old_fill_average <- function(.vec, .groupNAs = F) {
 
 
  
+
+
+
 
 
 

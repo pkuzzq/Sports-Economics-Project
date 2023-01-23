@@ -22,6 +22,7 @@ library(scales) # something with graphs/colors maybe
 library(shiny)
 library(spdep) # spatial data maybe
 library(stargazer)
+library(tidycensus)
 library(tidyselect)
 library(tidyverse)
 library(tigris) # something with spatial data I think
@@ -235,8 +236,8 @@ dat.covid <- read_csv("assets/covid_data/raw.covid2021.csv") %>%
   # 2021-09-13 is the Monday 4 weeks before the first NHL games, 2022-05-29 is the 
   # Sunday 4 weeks after the last games. The NBA starts later and finishes earlier than the NHL.
   filter("2021-09-12" <= date & date <= "2022-05-29") %>% # keep a day before 2021-09-13 for lag calc
-  left_join(dat.cbsa %>% select(cbsa, cbsa_title, fips, central_outlying), by = "fips") %>% 
-  relocate(cbsa:cbsa_title, .after = date) %>% 
+  left_join(dat.cbsa %>% select(cbsa, cbsa_title, home, fips, central_outlying), by = "fips") %>% 
+  relocate(cbsa:home, .after = date) %>% 
   relocate(central_outlying, .after = county) %>% 
   mutate(floor_monday = floor_date(date, "week", 1), .after = date) %>%  # week identifier
   group_by(fips, central_outlying) %>% # need central_outlying to adequately identify counties, since we have duplicates.
@@ -682,6 +683,10 @@ dat.leaflet.cbsa <- dat.leaflet %>%
 
 saveRDS(dat.leaflet.fips, "dat.leaflet.fips.rds")
 saveRDS(dat.leaflet.cbsa, "dat.leaflet.cbsa.rds")
+
+
+
+
 
 
 
