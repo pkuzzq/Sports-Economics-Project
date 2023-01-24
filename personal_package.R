@@ -1,6 +1,5 @@
 ############################################################################## #
 ### The Giancarlo Arcese personal package, trademark pending
-### gtarcese@gmail.com -> 10/05/2022
 ############################################################################## #
 
 theme_set(theme_bw())
@@ -19,7 +18,6 @@ options(scipen=999)
 #     r
 #   }
 # }       
-
 # assign to environment and update namespace
 assign_to_namespace <- function(.name, .obj, .env) {
   envName = as.character(match.call()$.env)
@@ -147,7 +145,7 @@ my_compress <- function(.vec, .fun = function(x) T) {
   newVec[which(newVec != "lmao broski")] %>%
     as_vector()
 }
-# return object name as c haracter
+# return object name as character
 obj_name <- function(.obj) {
   deparse(match.call()$.obj)
 }

@@ -4,6 +4,20 @@
 
 ivreg(Y ~ X + W | W + Z, ... )
 
+test1 <- dat.covid %>% 
+  filter(cbsa == "38060") %>% 
+  select(cbsa_w_n_cases, neigh_cbsa_w_n_cases) %>% 
+  distinct(.keep_all = T) %>% 
+  pull(cbsa_w_n_cases)*100
+
+test2 <- dat.covid %>% 
+  filter(cbsa == "38060") %>% 
+  select(cbsa_w_n_cases, neigh_cbsa_w_n_cases) %>% 
+  distinct(.keep_all = T) %>% 
+  pull(neigh_cbsa_w_n_cases)
+
+cor(test1, test2)
+
 reg_generator <- function(var, .league = "NBA", .per = F, .policy = F, .vaccine = F, .cluster = F, out) {
   # set data
   dat <- dat.final %>% filter(league == .league) %>% 
