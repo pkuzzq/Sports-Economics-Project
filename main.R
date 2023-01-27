@@ -83,6 +83,10 @@ write_bet("assets/betting_data/")
 counties(cb = TRUE, resolution = "500k") %>% # 500k is best resolution
   saveRDS(file = "assets/leaflet/2020_fips_shapes.rds") # geometry doesn't save nicely as CSV
 
+# tidycensus package. Newest is 2019 apparently
+get_estimates(geography = "county", product = "population", year = 2019) %>% 
+  write_csv("assets/cbsa_data/dat.population.csv")
+
 # FIP/CBSA Data ----------------------------------------------------------------
 
 # assigns home team to cbsa
@@ -181,6 +185,12 @@ dat.neighboring <- dat.neighboring %>% # run geo-spatial list into a function th
   ungroup() %>% 
   set_colnames(c("fips", "fips_neighbors"))
 
+# clean population data for merge
+dat.population <- read_csv("assets/cbsa_data/dat.population.csv") %>% 
+  filter(variable == "POP") %>% 
+  select(2, 4) %>% 
+  set_colnames(c("fips", "pop"))
+
 # clean CBSA data
 dat.cbsa <- read_csv("assets/cbsa_data/raw.cbsa.csv", col_types = cols(.default = "c")) %>% 
   as_tibble() %>% 
@@ -220,7 +230,15 @@ dat.cbsa <- read_csv("assets/cbsa_data/raw.cbsa.csv", col_types = cols(.default 
   left_join(x = select(., -(cbsa_title:cbsa_neighbors)), # for some reason, specifying x and y was necessary
             y = select(., cbsa:cbsa_neighbors) %>% distinct(cbsa, .keep_all = T),
              by = "cbsa") %>% 
-  relocate(fips:fips_neighbors, .after = last_col())
+  relocate(fips:fips_neighbors, .after = last_col()) %>% 
+  # merge population data
+  left_join(dat.population, by = "fips") %>% 
+  mutate(temp = case_when(central_outlying == "Neighboring" ~ T, T ~ F)) %>% 
+  group_by(cbsa, temp) %>% 
+  mutate(cbsa_pop = sum(pop)) %>% 
+  ungroup(temp) %>% 
+  select(-temp)
+  
   # 313 unique CBSA-only fips, 424 neighbor-only fips, 411 unique neighbor-only fips. ...
   # ... 23 duplicates. 13 neighbor-neighbor duplicates, 10 neighbor-cbsa duplicates. ...
   # ... together, there are 313 + 411 - 10 = 714 unique fips
@@ -239,9 +257,9 @@ dat.covid <- read_csv("assets/covid_data/raw.covid2021.csv") %>%
   # 2021-09-13 is the Monday 4 weeks before the first NHL games, 2022-05-29 is the ...
   # ... Sunday 4 weeks after the last games. The NBA starts later and finishes earlier than the NHL
   filter("2021-09-12" <= date & date <= "2022-05-29") %>% # keep a day before 2021-09-13 for lag calculation
-  left_join(dat.cbsa %>% select(cbsa, cbsa_title, home, fips, central_outlying), by = "fips") %>% 
+  left_join(dat.cbsa %>% select(cbsa, cbsa_title, home, fips, central_outlying, cbsa_pop), by = "fips") %>% 
   relocate(cbsa:home, .after = date) %>% 
-  relocate(central_outlying, .after = county) %>% 
+  relocate(central_outlying:cbsa_pop, .after = county) %>% 
   mutate(floor_monday = floor_date(date, "week", 1), .after = date) %>%  # week identifier
   group_by(fips, central_outlying) %>% # need central_outlying to adequately identify counties, since we have duplicates.
   mutate(across(cases:deaths, ~case_when( # create new cases and deaths
@@ -321,10 +339,11 @@ dat.covid <- read_csv("assets/covid_data/raw.covid2021.csv") %>%
       group_by(cbsa) %>% # add one week lag
       mutate(across(neigh_cbsa_w_n_cases:neigh_cbsa_f_w_n_deaths, ~lag(.x), .names = "lag_{col}")) %>% 
       select(floor_monday, cbsa, neigh_cbsa_w_n_cases:lag_neigh_cbsa_f_w_n_deaths),
-    by = c("floor_monday", "cbsa"))
+    by = c("floor_monday", "cbsa")) %>% 
+  mutate(across(matches("(?=.*cbsa)(?=.*_n)", perl = T), ~ .x/cbsa_pop, .names = "density_{col}"))
 
-write_csv(dat.covid %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
-          "assets/cleaned/dat.covid.csv")
+# write_csv(dat.covid %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
+#           "assets/cleaned/dat.covid.csv")
 # not loading nicely? Maybe cause im doing it rn with a bunch of NAs? Shouldn't be different from last timne ...
 # write.xlsx(dat.covid %>% mutate(across(everything(), ~as.character(.x))),
 #            "assets/cleaned/dat.covid.xlsx")
@@ -576,7 +595,7 @@ dat.final <- dat.nba %>%
   relocate(cbsa:time_zone, .after = date) %>% 
   left_join(dat.covid %>% # merging covid-19 data, 16 vars
               distinct(date, cbsa, .keep_all = T) %>% 
-              select(date, cbsa, cbsa_n_cases:ncol(.)),
+              select(date, cbsa, density_cbsa_n_cases:ncol(.)),
             by = c("date", "cbsa")) %>% 
   mutate(floor_monday = floor_date(date, "week", 1), .after = date) %>% 
   relocate(season, .after = floor_monday) %>% 
