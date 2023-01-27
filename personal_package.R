@@ -1,6 +1,5 @@
 ############################################################################## #
 ### The Giancarlo Arcese personal package, trademark pending
-### gtarcese@gmail.com -> 10/05/2022
 ############################################################################## #
 
 theme_set(theme_bw())
@@ -19,7 +18,6 @@ options(scipen=999)
 #     r
 #   }
 # }       
-
 # assign to environment and update namespace
 assign_to_namespace <- function(.name, .obj, .env) {
   envName = as.character(match.call()$.env)
@@ -147,7 +145,7 @@ my_compress <- function(.vec, .fun = function(x) T) {
   newVec[which(newVec != "lmao broski")] %>%
     as_vector()
 }
-# return object name as c haracter
+# return object name as character
 obj_name <- function(.obj) {
   deparse(match.call()$.obj)
 }
@@ -215,7 +213,7 @@ summary_stats <- function(.data, ..., yes_median = F) {
               psd = psd(.data[[var]]),
               pvar = pvar(.data[[var]])
             ) %>% 
-            select(2:ncol(.)) %>% 
+            select(where(~is.numeric(.x))) %>% # THIS IS TO DROP GROUPING VARIABLE, ASSUMES IT IS A CHARACTER
             rename_with(~paste(var, .x, sep = "_"), contains(c("mean", "median", "min", "max", "psd", "pvar")))
         )
     }
@@ -250,6 +248,9 @@ old_fill_average <- function(.vec, .groupNAs = F) {
 
 
  
+
+
+
 
 
 

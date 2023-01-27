@@ -3,82 +3,89 @@
 ### gtarcese@gmail.com - 10/5/2022
 ############################################################################## #  
 
-# Packages
-library(expp) # had to make a copy of libgdal.32.dylib and rename is libgdal.31.dylib
-# This messes with view() function, and probably lots of others
+# had to make a copy of libgdal.32.dylib and rename is libgdal.31.dylib
+
+# packages
+library(expp) # neighbors data frame function
+# this messes with view() function, and probably lots of others
 as.data.frame <- base::as.data.frame
-library(fastDummies) # turns factor in dummies
+library(fastDummies)
 library(htmltools) # for leaflet
 library(httr) # data-scraping
 library(leaflet)
-library(lubridate) # dates and time
-library(magrittr) # set_colnames
-library(openxlsx) 
+library(lubridate)
+library(magrittr)
+library(openxlsx)
 library(patchwork) 
 library(renv)
 library(RCurl) # needed for something ...
 library(rvest) # read_html function
-library(scales) # something with graphs/colors maybe
+library(scales)
 library(shiny)
-library(spdep) # spatial data maybe
+library(spdep) # spatial data, I think
 library(stargazer)
+library(tidycensus) # census data
 library(tidyselect)
 library(tidyverse)
-library(tigris) # something with spatial data I think
-library(totalcensus)
-# Import "personal package"
+library(tigris) # census data
+library(totalcensus) # cbsa data
+# import "personal package"
 source("personal_package.R", local = personal_package <- new.env())
 personal_package$my_attach(personal_package) 
 
 # Raw Data Collection ----------------------------------------------------------
 
-# CBSA data (from totalcensus package)
+# cbsa data (from totalcensus package)
 data("dict_cbsa")
 write_csv(dict_cbsa, "assets/cbsa_data/raw.cbsa.csv")
 
-# Covid-19 data (NewYorkTimes)
+# covid-19 data (NewYorkTimes)
 nytRaw2021 <- getURL("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties-2021.csv")
 nytRaw2022 <- getURL("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties-2022.csv")
 write_csv(read_csv(nytRaw2021), "assets/covid_data/raw.covid2021.csv")
 write_csv(read_csv(nytRaw2022), "assets/covid_data/raw.covid2022.csv")
 
-# Import data scraping objects
+# import data scraping objects
 attach_source("scrape.R", "data_scraping")
 
 # 2015-16 season. 1231 observations -> 1230 games, 1 allstar game
 raw.nba.2015 <- scrape_season(nbaSeasons[1] %>% reduce(c), "nba")
-# 2016-17 season. 1232 observations -> 1230 games, 1 allstar game, 1/7/2017 blazers postponed.
+# 2016-17 season. 1232 observations -> 1230 games, 1 allstar game, 1/7/2017 blazers postponed
 raw.nba.2016 <- scrape_season(nbaSeasons[2] %>% reduce(c), "nba")
-# 2017-18 season. 1232 observations -> 1230 games, 1 allstar game, USA game.
+# 2017-18 season. 1232 observations -> 1230 games, 1 allstar game, USA game
 raw.nba.2017 <- scrape_season(nbaSeasons[3] %>% reduce(c), "nba")
-# 2018-19 season. 1232 observations -> 1230 games, 1 allstar game, USA game.
+# 2018-19 season. 1232 observations -> 1230 games, 1 allstar game, USA game
 raw.nba.2018 <- scrape_season(nbaSeasons[4] %>% reduce(c), "nba")
-# NBA 2021-22 season. 1231 observations -> 1230 games, 1 allstar game.
+# NBA 2021-22 season. 1231 observations -> 1230 games, 1 allstar game
 raw.nba.2021 <- scrape_season(nbaSeasons[5] %>% reduce(c), "nba")
 
-# 2015-16 season. 1235 observations -> 1230 games, 3 allstar games, 1/23/2016 islanders 
-# postponed, 1/24/2016 capitals postponed. Missing 7 games from 10/8/2015, persistent 503.
+# 2015-16 season. 1235 observations -> 1230 games, 3 allstar games, 1/23/2016 islanders  ...
+# ... postponed, 1/24/2016 capitals postponed. Missing 7 games from 10/8/2015, persistent 503
 raw.nhl.2015 <- scrape_season(nhlSeasons[1] %>% reduce(c), "nhl")
-# 2016-17 season. 1234 observations -> 1230 games, 3 allstar games, 3/14/2017 devils postponed.
+# 2016-17 season. 1234 observations -> 1230 games, 3 allstar games, 3/14/2017 devils postponed
 raw.nhl.2016 <- scrape_season(nhlSeasons[2] %>% reduce(c), "nhl")
-# 2017-18 season. 1274 observations -> 1271 games, 3 allstar games. VGK joined this season.
+# 2017-18 season. 1274 observations -> 1271 games, 3 allstar games. VGK joined this season
 raw.nhl.2017 <- scrape_season(nhlSeasons[3] %>% reduce(c), "nhl")
-# 2018-19 season. 1274 observations -> 1271 games, 3 allstar games.
+# 2018-19 season. 1274 observations -> 1271 games, 3 allstar games
 raw.nhl.2018 <- scrape_season(nhlSeasons[4] %>% reduce(c), "nhl")
-# NHL 2021-22 season. 1413 observations -> 1312 games, 3 allstar games, 98 postponed. Kraken joined.
+# NHL 2021-22 season. 1413 observations -> 1312 games, 3 allstar games, 98 postponed. Kraken joined
 raw.nhl.2021 <- scrape_season(nhlSeasons[5] %>% reduce(c), "nhl")
 
-# Write the data
+# write the data
 mass_write("assets/game_data/nba/", game_data_names %includes% "nba")
 mass_write("assets/game_data/nhl/", game_data_names %includes% "nhl")
 
-# Betting data 
+# betting data 
 attach_source("bet.R", "betting_data")
 write_bet("assets/betting_data/")
 
-# # Collect Raw data, tigris package maybe maybe census idk
+# collect Raw data, tigris package function
 counties(cb = TRUE, resolution = "500k") %>% # 500k is best resolution
-  saveRDS(file = "assets/leaflet/2020_fips_shapes.rds") # geometry doesn't save nicely as CSV, should probably do for other files as well
+  saveRDS(file = "assets/leaflet/2020_fips_shapes.rds") # geometry doesn't save nicely as CSV
+
+# tidycensus package. Newest is 2019 apparently
+get_estimates(geography = "county", product = "population", year = 2019) %>% 
+  write_csv("assets/cbsa_data/dat.population.csv")
 
 # FIP/CBSA Data ----------------------------------------------------------------
 
@@ -178,7 +185,13 @@ dat.neighboring <- dat.neighboring %>% # run geo-spatial list into a function th
   ungroup() %>% 
   set_colnames(c("fips", "fips_neighbors"))
 
-# Clean CBSA data
+# clean population data for merge
+dat.population <- read_csv("assets/cbsa_data/dat.population.csv") %>% 
+  filter(variable == "POP") %>% 
+  select(2, 4) %>% 
+  set_colnames(c("fips", "pop"))
+
+# clean CBSA data
 dat.cbsa <- read_csv("assets/cbsa_data/raw.cbsa.csv", col_types = cols(.default = "c")) %>% 
   as_tibble() %>% 
   select(CBSA, CBSA_title, STATE, COUNTY, central_outlying) %>% 
@@ -198,7 +211,7 @@ dat.cbsa <- read_csv("assets/cbsa_data/raw.cbsa.csv", col_types = cols(.default 
   mutate(cbsa_fips = list(unique(fips)), .after = time_zone) %>% # all FIPs in a cbsa, in a list
   ungroup() %>% 
   left_join(dat.neighboring, by = "fips") %>% 
-  mutate(cbsa_neighbors = map2(fips_neighbors, cbsa_fips, ~setdiff(.x, .y))) %>% # All fips neighbors, including those already in the CBSA
+  mutate(cbsa_neighbors = map2(fips_neighbors, cbsa_fips, ~setdiff(.x, .y))) %>% # all fips neighbors, including those already in the CBSA
   left_join(unnest(., cbsa_neighbors) %>%
               distinct(cbsa, cbsa_neighbors) %>% 
               group_by(cbsa) %>% 
@@ -212,14 +225,23 @@ dat.cbsa <- read_csv("assets/cbsa_data/raw.cbsa.csv", col_types = cols(.default 
               rename(fips = cbsa_neighbors) %>% 
               mutate(central_outlying = "Neighboring")
               ) %>% # adds 430 fips, 313 + 430 = 743, all the neighboring fips. Assign them as "neighboring". 
-  filter(fips %notin% c("26021", "26159", "26005", "26139", "26121", "26127")) %>% # erroneously assigned neighbors
+  filter(fips %notin% c("26021", "26159", "26005", "26139", "26121", "26127")) %>% # erroneously assigned neighbors near great lakes
   relocate(fips_neighbors, .after = central_outlying) %>% 
   left_join(x = select(., -(cbsa_title:cbsa_neighbors)), # for some reason, specifying x and y was necessary
             y = select(., cbsa:cbsa_neighbors) %>% distinct(cbsa, .keep_all = T),
              by = "cbsa") %>% 
-  relocate(fips:fips_neighbors, .after = last_col())
-  # 313 unique CBSA-only fips, 407 unique neighbor-only fips.
-  # 23 duplicates. 13 fips are doubled because they neighbors to two CBSAs. 10 are a neighbor to one cbsa, and in another cbsa.
+  relocate(fips:fips_neighbors, .after = last_col()) %>% 
+  # merge population data
+  left_join(dat.population, by = "fips") %>% 
+  mutate(temp = case_when(central_outlying == "Neighboring" ~ T, T ~ F)) %>% 
+  group_by(cbsa, temp) %>% 
+  mutate(cbsa_pop = sum(pop)) %>% 
+  ungroup(temp) %>% 
+  select(-temp)
+  
+  # 313 unique CBSA-only fips, 424 neighbor-only fips, 411 unique neighbor-only fips. ...
+  # ... 23 duplicates. 13 neighbor-neighbor duplicates, 10 neighbor-cbsa duplicates. ...
+  # ... together, there are 313 + 411 - 10 = 714 unique fips
 
 # Covid-19 Data ----------------------------------------------------------------
 
@@ -228,16 +250,16 @@ dat.covid <- read_csv("assets/covid_data/raw.covid2021.csv") %>%
   bind_rows(read_csv("assets/covid_data/raw.covid2022.csv")) %>% 
   as_tibble() %>% 
   relocate(fips, state, .before = county) %>% 
-  # The 5 boroughs are listed as "New York City" in county var, and NA in fips. 
-  # I made it so NYC all under Bronx fip. 309 unique fips now. So 720 -> 716 unique fips
+  # The 5 boroughs are listed as "New York City" in county var, and NA in fips. ...
+  # ... I made it so NYC all under Bronx fip. 309 unique cbsa fips now. So 313 + 411 - 4 - 10 = 710 unique fips
   mutate(fips = case_when(county == "New York City" ~ "36005", T ~ fips)) %>% 
   filter(fips %in% (dat.cbsa %>% pull(fips))) %>% 
-  # 2021-09-13 is the Monday 4 weeks before the first NHL games, 2022-05-29 is the 
-  # Sunday 4 weeks after the last games. The NBA starts later and finishes earlier than the NHL.
-  filter("2021-09-12" <= date & date <= "2022-05-29") %>% # keep a day before 2021-09-13 for lag calc
-  left_join(dat.cbsa %>% select(cbsa, cbsa_title, fips, central_outlying), by = "fips") %>% 
-  relocate(cbsa:cbsa_title, .after = date) %>% 
-  relocate(central_outlying, .after = county) %>% 
+  # 2021-09-13 is the Monday 4 weeks before the first NHL games, 2022-05-29 is the ...
+  # ... Sunday 4 weeks after the last games. The NBA starts later and finishes earlier than the NHL
+  filter("2021-09-12" <= date & date <= "2022-05-29") %>% # keep a day before 2021-09-13 for lag calculation
+  left_join(dat.cbsa %>% select(cbsa, cbsa_title, home, fips, central_outlying, cbsa_pop), by = "fips") %>% 
+  relocate(cbsa:home, .after = date) %>% 
+  relocate(central_outlying:cbsa_pop, .after = county) %>% 
   mutate(floor_monday = floor_date(date, "week", 1), .after = date) %>%  # week identifier
   group_by(fips, central_outlying) %>% # need central_outlying to adequately identify counties, since we have duplicates.
   mutate(across(cases:deaths, ~case_when( # create new cases and deaths
@@ -248,26 +270,26 @@ dat.covid <- read_csv("assets/covid_data/raw.covid2021.csv") %>%
   )) %>%  
   ungroup() %>% 
   filter(date > "2021-09-12") %>% # we just needed this to calculate new cases for 2021-09-13
-  # we now have 739 FIPs each with 259 observations. 191401 total, 23 duplicate FIPs.
+  # we now have the same fips as dat.cbsa, but 4 less so 733 FIPs each with 259 observations. ...
+  # 189847 total, 23 duplicate FIPs (still, the removed counties were not duplicates)
   group_by(floor_monday, fips, central_outlying) %>% 
   mutate(across(n_cases:n_deaths, ~sum(.x), .names = "w_{col}")) %>% # weekly cases/deaths
   ungroup() %>% 
-  # Code below is for the 'filled' cases/deaths vars.
-  # fill takes c(NA, 1, NA, 3, NA) -> c(0, 1, 1, 3, 0). By filling in the boundary NAs, we could potentially mess up the data bad.
-  # For example, c(0, 0, 1000, -1, 2000, ...) -> c(0, 0, 1000, 1500, 2000, ...), when perhaps we should only trust the first time we get a
-  # trustworthy "Start" and "End" value. For low-pop fips, 0s likely are fine to use as boundaries, not the case for bigger ones.
-  # We're gonna want to analyze the percent increase/decrease by week and make sure there aren't many outliers
+  # Code below is for the 'filled' cases/deaths vars ...
+  # ... fill takes c(NA, 1, NA, 3, NA) -> c(0, 1, 1, 3, 0). By filling in the boundary NAs, we could potentially mess up the data bad. ...
+  # ... For example, c(0, 0, 1000, -1, 2000, ...) -> c(0, 0, 1000, 1500, 2000, ...), when perhaps we should only trust the first time we get a ...
+  # ... trustworthy "Start" and "End" value. For low-pop fips, 0s likely are fine to use as boundaries, not the case for bigger ones. ...
+  # ... We're gonna want to analyze the percent increase/decrease by week and make sure there aren't many outliers
   left_join(group_by(., fips, central_outlying) %>% 
               mutate(w_n_cases = case_when( # encodes 0 and negatives as NAs
                 w_n_cases <= 0 ~ NA_real_,
                 T ~ w_n_cases
               )) %>% # 191401
               mutate(w_n_deaths = case_when(
-                w_n_deaths <= 0 ~ NA_real_, # Encoding 0s messes shit up because first observations are sometimes 0.
+                w_n_deaths <= 0 ~ NA_real_, # Encoding 0s messes stuff up because first observations are sometimes 0.
                 T ~ w_n_deaths
               )) %>% 
               distinct(., fips, central_outlying, floor_monday, .keep_all = T) %>% 
-              # group_by(fips, central_outlying) %>% 
               mutate(across(w_n_cases:w_n_deaths, ~floor(fill_average(.x)), .names = "f_{col}")) %>% 
               select(floor_monday, fips, central_outlying, f_w_n_cases:f_w_n_deaths),
             by = c("floor_monday", "fips", "central_outlying")) %>% 
@@ -317,10 +339,11 @@ dat.covid <- read_csv("assets/covid_data/raw.covid2021.csv") %>%
       group_by(cbsa) %>% # add one week lag
       mutate(across(neigh_cbsa_w_n_cases:neigh_cbsa_f_w_n_deaths, ~lag(.x), .names = "lag_{col}")) %>% 
       select(floor_monday, cbsa, neigh_cbsa_w_n_cases:lag_neigh_cbsa_f_w_n_deaths),
-    by = c("floor_monday", "cbsa"))
+    by = c("floor_monday", "cbsa")) %>% 
+  mutate(across(matches("(?=.*cbsa)(?=.*_n)", perl = T), ~ .x/cbsa_pop, .names = "density_{col}"))
 
-write_csv(dat.covid %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
-          "assets/cleaned/dat.covid.csv")
+# write_csv(dat.covid %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
+#           "assets/cleaned/dat.covid.csv")
 # not loading nicely? Maybe cause im doing it rn with a bunch of NAs? Shouldn't be different from last timne ...
 # write.xlsx(dat.covid %>% mutate(across(everything(), ~as.character(.x))),
 #            "assets/cleaned/dat.covid.xlsx")
@@ -337,13 +360,13 @@ write_csv(dat.covid %>% mutate(across(everything(), ~as.character(.x) %>% paste0
 
 # Betting Data -----------------------------------------------------------------
 
-# Load already cleaned betting data
+# load already cleaned betting data
 attach_source("bet.R", "betting_data")
 dat.bet <- load_clean_bet()
 
 # Game Data Cleaning -----------------------------------------------------------
 
-# Clean NBA data 
+# clean NBA data 
 dat.nba <- mass_load("assets/game_data/nba/", 1, .bind = T) %>% # 6158 observations
   as_tibble() %>% 
   mutate(across(everything(), ~str_replace(.x, "\\?", ""))) %>% 
@@ -356,7 +379,7 @@ dat.nba <- mass_load("assets/game_data/nba/", 1, .bind = T) %>% # 6158 observati
     .x == "LA Clippers" ~ "Los Angeles Clippers",
     T ~ .x
   ))) %>% 
-  # Filling in missing attendance figures below. Missing from the actual ESPN site.
+  # filling in missing attendance figures below. Missing from the actual ESPN site
   mutate(attendance = case_when(
     date == "2021-11-03" & home == "Sacramento Kings" ~ "Attendance: 12,480", # https://www.nba.com/game/nop-vs-sac-0022100118?watch
     date == "2021-10-26" & home == "Oklahoma City Thunder" ~ "Attendance: 15,717", # https://www.nba.com/game/gsw-vs-okc-0022100051    
@@ -367,7 +390,7 @@ dat.nba <- mass_load("assets/game_data/nba/", 1, .bind = T) %>% # 6158 observati
   )) %>% 
   mutate(league = "NBA", .after = date)
 
-# Clean NHL data 
+# clean NHL data 
 dat.nhl <- mass_load("assets/game_data/nhl/", 1, .bind = T) %>% # 6423 observations
   as_tibble() %>% 
   mutate(across(everything(), ~str_replace(.x, "\\?", ""))) %>% 
@@ -551,7 +574,7 @@ policy_func <- function(.home, .date) {
   )
 }
   
-# Merge everything together, prep for regression
+# merge everything together, prep for regression
 dat.final <- dat.nba %>% 
   bind_rows(dat.nhl) %>% 
   mutate(date = as.Date(date)) %>% 
@@ -570,9 +593,9 @@ dat.final <- dat.nba %>%
               distinct(home, .keep_all = T),
             by = "home") %>% 
   relocate(cbsa:time_zone, .after = date) %>% 
-  left_join(dat.covid %>% # merging covid data, 16 vars
+  left_join(dat.covid %>% # merging covid-19 data, 16 vars
               distinct(date, cbsa, .keep_all = T) %>% 
-              select(date, cbsa, cbsa_n_cases:ncol(.)),
+              select(date, cbsa, density_cbsa_n_cases:ncol(.)),
             by = c("date", "cbsa")) %>% 
   mutate(floor_monday = floor_date(date, "week", 1), .after = date) %>% 
   relocate(season, .after = floor_monday) %>% 
@@ -581,10 +604,10 @@ dat.final <- dat.nba %>%
     time_zone == "CST" ~ str_extract(game_time, "(\\d+|:)+") %>% str_replace(":", ".") %>% as.numeric() - 1,
     time_zone == "MST" ~ str_extract(game_time, "(\\d+|:)+") %>% str_replace(":", ".") %>% as.numeric() - 2,
     T ~ str_extract(game_time, "(\\d+|:)+") %>% str_replace(":", ".") %>% as.numeric() - 3 
-  ) + # Adjust for time weirdness
+  ) + # adjust for time weirdness
     case_when(str_extract(game_time, "(\\d+|:)+") %>% str_replace(":", ".") %>% as.numeric() >= 12 ~ 0, T ~ 12), 
   .after = game_time) %>% 
-  mutate(game_time = case_when( # Adjust time
+  mutate(game_time = case_when( # adjust time
     game_time_num < 12 ~ format(round(game_time_num, 2), nsmall = 2) %>% paste("AM") %>% str_replace("\\.", ":"),
     T ~ format(round(game_time_num, 2), nsmall = 2) %>% paste("PM") %>% str_replace("\\.", ":"),
   )) %>% 
@@ -597,14 +620,14 @@ dat.final <- dat.nba %>%
   
 write_csv(dat.final %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
           "assets/cleaned/dat.final.csv")
-# not loading nicely? Maybe cause im doing it rn with a bunch of NAs? Shouldn't be different from last timne ...
+# not loading nicely? Maybe cause i"m doing it with a bunch of NAs? Shouldn't be different from last time ...
 write.xlsx(dat.final %>% mutate(across(everything(), ~as.character(.x))),
           "assets/cleaned/dat.final.xlsx")
 
 # Leaflet Data -----------------------------------------------------------------
 
-# 200 & 710 observations
-dat.leaflet <- readRDS("assets/leaflet/2020_fips_shapes.rds") %>% # 500k is best resolution
+# 200 by 710 observations
+dat.leaflet <- readRDS("assets/leaflet/2020_fips_shapes.rds") %>%
   select(GEOID, geometry) %>% 
   mutate(geometry = st_transform(geometry, '+proj=longlat +datum=WGS84')) %>% # prevents leaflet warnings
   rename(fips = GEOID) %>% 
@@ -623,7 +646,7 @@ dat.leaflet <- readRDS("assets/leaflet/2020_fips_shapes.rds") %>% # 500k is best
   group_by(fips) %>% 
   mutate(temp = (first(cbsa) == cbsa), .after = fips) %>% 
   ungroup() %>% 
-  filter(temp == T) %>% # Removes neighbor-neighbor overlap.
+  filter(temp == T) %>% # removes neighbor-neighbor overlap.
   select(-temp) %>% 
   left_join(filter(., date == "2021-11-16") %>% # could be any day
               mutate(neighboring = case_when(central_outlying == "Neighboring" ~ T, T ~ F)) %>% 
@@ -671,17 +694,22 @@ dat.leaflet <- readRDS("assets/leaflet/2020_fips_shapes.rds") %>% # 500k is best
         <li style=margin-left:15px;>Weekly New Deaths: ", w_n_deaths, "</li>"
   )) %>% 
   select(-game_time_num, -season, -game_time_approx) 
-# 
+
+# fips data
 dat.leaflet.fips <- dat.leaflet %>%
-  select(floor_monday, cbsa, cbsa_title, game_data_nest, fips, county, fip_label, central_outlying, geometry, w_n_cases:neigh_cbsa_w_n_deaths)
-# 
+  select(floor_monday, cbsa, cbsa_title, game_data_nest, fips, county, fip_label, central_outlying, geometry, w_n_cases:neigh_cbsa_w_n_deaths) %>% 
+  saveRDS("dat.leaflet.fips.rds")
+
+# cbsa data
 dat.leaflet.cbsa <- dat.leaflet %>% 
   st_drop_geometry() %>% 
   select(cbsa, cbsa_geometry) %>% 
-  distinct(cbsa_geometry)
+  distinct(cbsa_geometry) %>% 
+  saveRDS("dat.leaflet.cbsa.rds")
 
-saveRDS(dat.leaflet.fips, "dat.leaflet.fips.rds")
-saveRDS(dat.leaflet.cbsa, "dat.leaflet.cbsa.rds")
+
+
+
 
 
 

@@ -101,14 +101,16 @@ plot.attendance <- dat.final %>%
 dat.final %>% 
   filter(season == "2021-22") %>% 
   group_by(league) %>% 
-  summary_stats(lag_cbsa_w_n_cases:lag_cbsa_f_w_n_deaths, yes_median = T) 
+  summary_stats(lag_cbsa_w_n_cases, lag_cbsa_w_n_deaths, lag_neigh_cbsa_w_n_cases, lag_neigh_cbsa_w_n_deaths,
+                lag_cbsa_f_w_n_cases, lag_cbsa_f_w_n_deaths, lag_neigh_cbsa_f_w_n_cases, lag_neigh_cbsa_w_n_deaths, yes_median = T) 
 
 # Single Team
 dat.final %>% 
   filter(season == "2021-22") %>% 
   filter(home == "Boston Celtics") %>% 
-  summary_stats(lag_cbsa_w_n_cases:lag_cbsa_f_w_n_deaths) 
-  
+  summary_stats(lag_cbsa_w_n_cases, lag_cbsa_w_n_deaths, lag_neigh_cbsa_w_n_cases, lag_neigh_cbsa_w_n_deaths,
+                  lag_cbsa_f_w_n_cases, lag_cbsa_f_w_n_deaths, lag_neigh_cbsa_f_w_n_cases, lag_neigh_cbsa_w_n_deaths, yes_median = T) 
+
 # Covid-19 Plots ---------------------------------------------------------------
 
 # National Level
@@ -158,7 +160,7 @@ plot.covid.national <- dat.covid %>%
   ) 
 
 # Per CBSA
-cbsa_plot <- function(.home) {
+cbsa_plot <- function(.home, neighboring = F) {
   if (.home %in% (dat.final %>% filter(league == "NBA") %>% pull(home))) {
     dat.lower <- "2021-10-18"
     dat.upper <- "2022-04-11"
@@ -167,11 +169,27 @@ cbsa_plot <- function(.home) {
     dat.lower <- "2021-10-11"
     dat.upper <- "2022-04-30"
   }
+  varList <- if (neighboring) c("lag_neigh_cbsa_w_n_cases", "lag_neigh_cbsa_w_n_deaths", "lag_neigh_cbsa_f_w_n_cases", "lag_neigh_cbsa_f_w_n_deaths") 
+    else c("lag_cbsa_w_n_cases", "lag_cbsa_w_n_deaths", "lag_cbsa_f_w_n_cases", "lag_cbsa_f_w_n_deaths") 
+  label <- if (neighboring) c(
+    `lag_neigh_cbsa_f_w_n_cases` = "Lag Weekly New Cases*",
+    `lag_neigh_cbsa_w_n_cases` = "Lag Weekly New Cases",
+    `lag_neigh_cbsa_f_w_n_deaths` = "Lag Weekly New Deaths*",
+    `lag_neigh_cbsa_w_n_deaths` = "Lag Weekly New Deaths"
+    )
+  else c(
+    `lag_cbsa_f_w_n_cases` = "Lag Weekly New Cases*",
+    `lag_cbsa_w_n_cases` = "Lag Weekly New Cases",
+    `lag_cbsa_f_w_n_deaths` = "Lag Weekly New Deaths*",
+    `lag_cbsa_w_n_deaths` = "Lag Weekly New Deaths"
+  )
+  
+  # graph
   dat.covid %>%
     unnest(home) %>%
     filter(home == .home) %>%
     filter(date > dat.lower & date < dat.upper) %>%
-    select(floor_monday, lag_cbsa_w_n_cases:lag_cbsa_f_w_n_deaths) %>%
+    select(floor_monday, varList[1], varList[2], varList[3], varList[4]) %>% 
     distinct(floor_monday, .keep_all = T) %>%
     left_join(
       dat.final %>%
@@ -182,37 +200,28 @@ cbsa_plot <- function(.home) {
     group_by(floor_monday) %>%
     summarize(
       num_games = sum(!is.na(league), na.rm = T),
-      lag_cbsa_w_n_cases = first(lag_cbsa_w_n_cases),
-      lag_cbsa_w_n_deaths = first(lag_cbsa_w_n_deaths),
-      lag_cbsa_f_w_n_cases = first(lag_cbsa_f_w_n_cases),
-      lag_cbsa_f_w_n_deaths = first(lag_cbsa_f_w_n_deaths)
-    ) %>%
+      first = first(!!sym(varList[1])),
+      second = first(!!sym(varList[2])),
+      third = first(!!sym(varList[3])),
+      fourth = first(!!sym(varList[4]))
+    ) %>% 
+    set_colnames(c("floor_monday", "num_games", varList)) %>% 
     ungroup() %>%
     mutate(num_games = as.character(num_games)) %>%
-    pivot_longer(lag_cbsa_w_n_cases:lag_cbsa_f_w_n_deaths) %>%
-    mutate(name = factor(name, levels = c(
-      "lag_cbsa_f_w_n_cases", "lag_cbsa_w_n_cases", "lag_cbsa_f_w_n_deaths", "lag_cbsa_w_n_deaths"
-      ))) %>% 
+    pivot_longer(c(varList[1], varList[2], varList[3], varList[4])) %>% 
+    mutate(name = factor(name, levels = varList)) %>% 
     ggplot(aes(x = floor_monday, y = value, fill = name)) +
     geom_col(width = 5) +
     facet_wrap(
       ~name,
       nrow = 2,
       scales = "free_y",
-      labeller = as_labeller(
-        c(
-          `lag_cbsa_f_w_n_cases` = "Lag Weekly New Cases*",
-          `lag_cbsa_w_n_cases` = "Lag Weekly New Cases",
-          `lag_cbsa_f_w_n_deaths` = "Lag Weekly New Deaths*",
-          `lag_cbsa_w_n_deaths` = "Lag Weekly New Deaths"
-          
-          )
-      )
+      labeller = as_labeller(label)
     ) +
     geom_hline(yintercept = 0) +
     scale_x_date(date_labels = "%b", date_breaks = "1 month") +
     scale_y_continuous(labels = comma) +
-    scale_fill_discrete(guide = "none") + 
+    scale_fill_discrete(guide = "none") +
     labs(
       title = "New Covid-19 Cases/Deaths Aggregated Over Target CBSAs",
       subtitle = "Every Week From 10/11/2021 to 4/25/2022",
@@ -221,7 +230,7 @@ cbsa_plot <- function(.home) {
       )
 }
 
-cbsa_plot(.home = "Boston Celtics")
+cbsa_plot(.home = "Boston Celtics", neighboring = T)
 
 # Policy Graph -----------------------------------------------------------------
 
@@ -271,52 +280,6 @@ plot.policies <- tibble(
     x = "Date (2021-22)",
     y = "Percent Teams\nWith Policy"
   ) 
-
-
-
-
-
-
-
-
-# plot.covid <- dat.covid %>% 
-#   filter(date > "2021-10-11" & date < "2022-04-30") %>% 
-#   group_by(date, cbsa) %>% 
-#   summarize(
-#     floor_monday = first(floor_monday),
-#     lag_cbsa_w_n_cases = first(lag_cbsa_w_n_cases),
-#     lag_cbsa_w_n_deaths = first(lag_cbsa_w_n_deaths),
-#     lag_cbsa_f_w_n_cases = first(lag_cbsa_f_w_n_cases),
-#     lag_cbsa_f_w_n_deaths = first(lag_cbsa_f_w_n_deaths)
-#   ) %>% 
-#   ungroup() %>% 
-#   group_by(date) %>% 
-#   summarize(
-#     floor_monday = first(floor_monday),
-#     lag_cbsa_w_n_cases = sum(lag_cbsa_w_n_cases),
-#     lag_cbsa_w_n_deaths = sum(lag_cbsa_w_n_deaths),
-#     lag_cbsa_f_w_n_cases = sum(lag_cbsa_f_w_n_cases),
-#     lag_cbsa_f_w_n_deaths = sum(lag_cbsa_f_w_n_deaths)
-#   ) %>% 
-#   ungroup() %>% 
-#   left_join(
-#     dat.final %>% 
-#       select(date, league),
-#     by = c("date")
-#   ) %>% 
-#   group_by(floor_monday) %>% 
-#   summarize(
-#     num_games_nba = sum(league == "NBA", na.rm = T),
-#     num_games_nhl = sum(league == "NHL", na.rm = T),
-#     lag_cbsa_w_n_cases = first(lag_cbsa_w_n_cases),
-#     lag_cbsa_w_n_deaths = first(lag_cbsa_w_n_deaths),
-#     lag_cbsa_f_w_n_cases = first(lag_cbsa_f_w_n_cases),
-#     lag_cbsa_f_w_n_deaths = first(lag_cbsa_f_w_n_deaths)
-#   ) %>% 
-#   ungroup() %>% 
-  
-  
-
 
 
 

@@ -118,8 +118,8 @@ load_clean_bet <- function() {
         .x < 0 ~ -.x/(100 - .x),
       ))) %>% 
       mutate(across(home_odds:away_odds, ~.x/(home_odds + away_odds), .names = "adj_{col}")) %>% # biggest difference is 4.7%
-      # We had to assume the data had the visitor listed first then the home team on the next row. 
-      # Just judging by the results not being too different, I'd say it's fine.
+      # We had to assume the data had the visitor listed first then the home team on the next row. ...
+      # ... Just judging by the results not being too different, I'd say it's fine
       mutate(date = case_when(
         str_length(date) == 4 ~ paste(year, str_sub(date, 1L, 2L), str_sub(date, 3L, 4L), sep = "-"),
         T ~ paste(year + 1, paste0("0", str_sub(date, 1L, 1L)), str_sub(date, 2L, 3L), sep = "-")

@@ -5,12 +5,12 @@
 # install.packages("sf", type = "source", configure.args = c("--with-sqlite3-lib=/usr/local/opt/sqlite/lib", "--with-proj-lib=/usr/local/opt/proj/lib"))
 
 # Packages
-library(shiny)
-library(tidyverse)
-library(leaflet)
 library(htmltools)
+library(leaflet)
 library(sf)
+library(shiny)
 library(shinycssloaders)
+library(tidyverse)
 
 # load the daata
 dat.map.fips <- readRDS("dat.leaflet.fips.rds")
@@ -56,7 +56,7 @@ ui <- fluidPage(
       working paper won first place at the undergraduate paper competition at the 
       2022 New York State Economics Association conference at Suny Old Westbury.</br></br>
       
-      Sports data is provided by ESPN.com, Covid-19 data from <a href='https://github.com/Garcese/sports_econ_project'>TheNewYorkTimes Covid-19 Tracker</a>,
+      Sports data is provided by ESPN.com, Covid-19 data from <a href='https://github.com/nytimes/covid-19-data'>TheNewYorkTimes Covid-19 Tracker</a>,
       and county shape files from the R Tigris package (which comes from the 2020 census). 
       The source code used to create this project, as well as the R code to collect 
       and clean all the raw data, can be found at this project's <a href='https://github.com/Garcese/sports_econ_project'>GitHub page</a>.
