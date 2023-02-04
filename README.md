@@ -6,3 +6,26 @@ This project seeks to determine whether local Covid-19 activity, measured by the
 I completed a thesis on this topic already during my Senior year at Colgate University. A (slightly updated) copy of the thesis can be found in the repository [here](https://github.com/Garcese/sports_econ_project/blob/main/thesis.pdf). This project was also presnented at the New York State Economics Association 2022 conference in the undergraduate research section, winning first prize. A copy of the presentation slides can be found [here](https://github.com/Garcese/sports_econ_project/blob/main/arcese_NYSEA22_presentation.pdf).
 
 With any questions, please reach out to GTArcese@gmail.com.
+
+
+大学生活了解？走一步看一步
+
+兼修双学位，应用数学~ 数学与应用数学
+
+翟：数学、应用数学、物理
+
+董梓琪，经+物
+
+卢卓然：物理，
+
+卢卓然
+
+人工智能方向？
+
+理工方向，
+
+光华~
+
+泽
+
+收入、就业稳定
