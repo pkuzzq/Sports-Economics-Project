@@ -12,6 +12,7 @@ as.data.frame <- base::as.data.frame
 library(fastDummies)
 library(htmltools) # for leaflet
 library(httr) # data-scraping
+library(ivreg)
 library(leaflet)
 library(lubridate)
 library(magrittr)
@@ -340,7 +341,7 @@ dat.covid <- read_csv("assets/covid_data/raw.covid2021.csv") %>%
       mutate(across(neigh_cbsa_w_n_cases:neigh_cbsa_f_w_n_deaths, ~lag(.x), .names = "lag_{col}")) %>% 
       select(floor_monday, cbsa, neigh_cbsa_w_n_cases:lag_neigh_cbsa_f_w_n_deaths),
     by = c("floor_monday", "cbsa")) %>% 
-  mutate(across(matches("(?=.*cbsa)(?=.*_n)", perl = T), ~ .x/cbsa_pop, .names = "density_{col}"))
+  mutate(across(matches("(?=.*cbsa)(?=.*_n)", perl = T), ~ .x*10000/cbsa_pop, .names = "density_{col}"))
 
 # write_csv(dat.covid %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
 #           "assets/cleaned/dat.covid.csv")
@@ -616,13 +617,16 @@ dat.final <- dat.nba %>%
     18 <= game_time_num | game_time_num <= 20 ~ "Evening Game",
     game_time_num > 20 ~ "Night Game" 
   ), .after = game_time_num) %>% 
-  mutate(policy = policy_func(home, date), .after = stadium) 
+  mutate(policy = policy_func(home, date), .after = stadium) %>% 
+  mutate(weekday = weekdays(date), .after = date) %>% 
+  mutate(across(contains("density"), ~case_when(is.na(.x) ~ 0, T ~ .x))) %>% 
+  mutate(policy = case_when(is.na(policy) ~ "No Policy", T ~ policy))
   
-write_csv(dat.final %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
-          "assets/cleaned/dat.final.csv")
-# not loading nicely? Maybe cause i"m doing it with a bunch of NAs? Shouldn't be different from last time ...
-write.xlsx(dat.final %>% mutate(across(everything(), ~as.character(.x))),
-          "assets/cleaned/dat.final.xlsx")
+# write_csv(dat.final %>% mutate(across(everything(), ~as.character(.x) %>% paste0("?"))),
+#           "assets/cleaned/dat.final.csv")
+# # not loading nicely? Maybe cause i"m doing it with a bunch of NAs? Shouldn't be different from last time ...
+# write.xlsx(dat.final %>% mutate(across(everything(), ~as.character(.x))),
+#           "assets/cleaned/dat.final.xlsx")
 
 # Leaflet Data -----------------------------------------------------------------
 
@@ -706,6 +710,9 @@ dat.leaflet.cbsa <- dat.leaflet %>%
   select(cbsa, cbsa_geometry) %>% 
   distinct(cbsa_geometry) %>% 
   saveRDS("dat.leaflet.cbsa.rds")
+
+
+
 
 
 
