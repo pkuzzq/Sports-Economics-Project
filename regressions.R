@@ -2,7 +2,21 @@
 ### Regressions
 ############################################################################## #  
 
-ivreg(Y ~ X + W | W + Z, ... )
+lm(attendance_per ~ density_cbsa_w_n_cases + home + away + weekday + season 
+   + adj_home_odds + game_time_approx + policy,
+   data = filter(dat.final, league == "NBA" & season == "2021-22"))
+
+ivreg(attendance_per ~ density_cbsa_w_n_cases + home + away + weekday + season 
+   + adj_home_odds + game_time_approx + policy | 
+     density_neigh_cbsa_w_n_cases + home + away + weekday + season 
+   + adj_home_odds + game_time_approx + policy,
+   data = filter(dat.final, league == "NBA"))
+
+
+
+ivreg(attendance_per ~ density_cbsa_w_n_cases + home | home + density_neigh_cbsa_w_n_cases, data = dat.final) %>% 
+  summary()
+  
 
 test1 <- dat.covid %>% 
   filter(cbsa == "38060") %>% 
